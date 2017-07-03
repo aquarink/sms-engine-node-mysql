@@ -196,12 +196,16 @@ new CronJob('* * * * * *', function () {
                                                                                 unlinkFile(files, function (resDel) {
                                                                                     if (resDel === 'delOk') {
                                                                                         console.log('[' + dateNow + '] : Create File, Folder & Remove Apps - Apps Push Ok');
+                                                                                    } else {
+                                                                                        console.log('aa');
                                                                                     }
                                                                                 });
                                                                             } else if (feedBack === 'else') {
                                                                                 unlinkFile(files, function (resDel) {
                                                                                     if (resDel === 'delOk') {
                                                                                         console.log('[' + dateNow + '] : Create File & Remove Apps - Apps Push Ok');
+                                                                                    } else {
+                                                                                        console.log('bb');
                                                                                     }
                                                                                 });
                                                                             } else {

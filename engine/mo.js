@@ -8,7 +8,7 @@ var router = express.Router();
 /* GET home page. */
 router.get('/:telco', function (req, res, next) {
 
-    res.send('a');
+    res.send('ok');
     //console.log(req.query);
     if (JSON.stringify(req.query) !== '{}') {
         var keyword;

@@ -78,12 +78,16 @@ new CronJob('*/2 * * * * *', function () {
                                                     hitTelco(link, function (resHit) {
                                                         if (resHit.body !== 'ok') {
                                                             contentParse.trx_id = resHit.body;
+                                                        } else {
+                                                            console.log('aaaaa');
                                                         }
 
                                                         insertPush(contentParse, function (resInsert) {
                                                             cb(null, 'done');
                                                         });
                                                     });
+                                                } else {
+                                                    console.log('more error');
                                                 }
                                             });
                                         } else {
@@ -91,7 +95,7 @@ new CronJob('*/2 * * * * *', function () {
                                         }
                                     });
                                 }, (one, two) => {
-                                    if(two === 'done') {
+                                    if (two[0] === 'done') {
                                         console.log('[' + dateNow + '] : Unlink, Push & Insert Data on Telco ' + telcoName + ' More Limit Ok');
                                     }
                                 });
@@ -108,18 +112,22 @@ new CronJob('*/2 * * * * *', function () {
                                             if (!err) {
                                                 var contentParse = JSON.parse(content);
                                                 var link = resTelConf[0].address + '?username=' + resTelConf[0].username + '&password=' + resTelConf[0].password + '&msisdn=' + contentParse.msisdn + '&trxid=' + contentParse.trx_id + '&serviceId=' + contentParse.cost + '&sms=' + contentParse.content_field + '&shortname=1212121212';
-
+                                                
                                                 unlinkFile(folder + '/' + data, function (resDel) {
                                                     if (resDel === 'deleteOk') {
                                                         hitTelco(link, function (resHit) {
                                                             if (resHit.body !== 'ok') {
                                                                 contentParse.trx_id = resHit.body;
+                                                            } else {
+                                                                console.log('bbbb');
                                                             }
 
                                                             insertPush(contentParse, function (resInsert) {
-                                                                cb(null, link);
+                                                                cb(null, 'done');
                                                             });
                                                         });
+                                                    } else {
+                                                        console.log('less error');
                                                     }
                                                 });
                                             } else {
@@ -127,9 +135,9 @@ new CronJob('*/2 * * * * *', function () {
                                             }
                                         });
                                     }, (one, two) => {
-                                        if(two === 'done') {
-                                        console.log('[' + dateNow + '] : Unlink, Push & Insert Data on Telco ' + telcoName + ' Less Limit Ok');
-                                    }
+                                        if (two[0] === 'done') {
+                                            console.log('[' + dateNow + '] : Unlink, Push & Insert Data on Telco ' + telcoName + ' Less Limit Ok');
+                                        }
                                     });
                                 }
                             }
@@ -140,7 +148,7 @@ new CronJob('*/2 * * * * *', function () {
                     console.log('error try catch on ' + telcoName);
                 }
             } else {
-                //console.log(err);
+                console.log(err);
             }
         });
     } catch (err) {
