@@ -58,7 +58,7 @@ router.get('/:telco', function (req, res, next) {
         };
 
         //var file2 = telco + '_' + shortcode + '_' + msisdnNew + '_' + sms + '_' + keyword + '_' + trxId + '_' + trxDate + '_' + new objId() + '_' + dateNow + '_' + reg + '.json';
-        var file = './files/mo/MO-' + new objId() + '.json';
+        var file = './files/mo/' + telco + '>' + shortcode + '>' + msisdnNew + '>' + sms + '>' + keyword + '>' + trxId + '>' + trxDate + '>' + dateNow + '>' + reg + '>' + new objId() + '.json';
 
         //Check Folder Exist
         try {

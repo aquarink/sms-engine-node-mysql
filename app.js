@@ -11,13 +11,13 @@ var dr = require('./engine/dr');
 
 //Service
 var moR = require('./engine/mo-read');
-var drR = require('./engine/dr-read');
+//var drR = require('./engine/dr-read');
 
 //Apps
-var appBola = require('./engine/apps/bola');
+//var appBola = require('./engine/apps/bola');
 
 //Telcp
-var xl = require('./engine/telco/xl');
+//var xl = require('./engine/telco/xl');
 
 var app = express();
 

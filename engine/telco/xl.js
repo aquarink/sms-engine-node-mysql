@@ -70,26 +70,74 @@ new CronJob('*/2 * * * * *', function () {
                                 async.map(f, function (data, cb) {
                                     fs.readFile(folder + '/' + data, 'utf-8', function (err, content) {
                                         if (!err) {
-                                            var contentParse = JSON.parse(content);
-                                            var link = resTelConf[0].address + '?username=' + resTelConf[0].username + '&password=' + resTelConf[0].password + '&msisdn=' + contentParse.msisdn + '&trxid=' + contentParse.trx_id + '&serviceId=' + contentParse.cost + '&sms=' + contentParse.content_field + '&shortname=1212121212';
+                                            var stats = fs.statSync(folder + '/' + data);
+                                            var fileSizeInBytes = stats.size;
 
-                                            unlinkFile(folder + '/' + data, function (resDel) {
-                                                if (resDel === 'deleteOk') {
-                                                    hitTelco(link, function (resHit) {
-                                                        if (resHit.body !== 'ok') {
-                                                            contentParse.trx_id = resHit.body;
+                                            if (fileSizeInBytes > 100) {
+                                                try {
+                                                    var contentParse = JSON.parse(content);
+                                                    var link = resTelConf[0].address + '?username=' + resTelConf[0].username + '&password=' + resTelConf[0].password + '&msisdn=' + contentParse.msisdn + '&trxid=' + contentParse.trx_id + '&serviceId=' + contentParse.cost + '&sms=' + contentParse.content_field + '&shortname=1212121212';
+                                                    console.log(link)
+                                                    unlinkFile(folder + '/' + data, function (resDel) {
+                                                        if (resDel === 'deleteOk') {
+                                                            hitTelco(link, function (resHit) {
+                                                                if (resHit.body !== 'ok') {
+                                                                    contentParse.trx_id = resHit.body;
+                                                                } else {
+                                                                    console.log('aaaaa');
+                                                                }
+
+                                                                insertPush(contentParse, function (resInsert) {
+                                                                    cb(null, 'done');
+                                                                });
+                                                            });
                                                         } else {
-                                                            console.log('aaaaa');
+                                                            console.log('more error');
                                                         }
-
-                                                        insertPush(contentParse, function (resInsert) {
-                                                            cb(null, 'done');
-                                                        });
                                                     });
-                                                } else {
-                                                    console.log('more error');
+                                                } catch (err) {
+                                                    console.log('error try catch Telco ' + telcoName + ' file size');
                                                 }
-                                            });
+                                            } else {
+                                                try {
+                                                    function checkDirectory(directory, callback) {
+                                                        fs.stat(directory, function (err, stats) {
+                                                            if (err) {
+                                                                callback(err);
+                                                            } else {
+                                                                callback('ok');
+                                                            }
+                                                        });
+                                                    }
+
+                                                    checkDirectory('./files/empty/push/' + telcoName, function (error) {
+                                                        if (error.code === 'ENOENT') {
+                                                            mkdirp('./files/empty/push/' + telcoName, function (err) {
+                                                                if (!err)
+                                                                    fs.rename(folder + '/' + data, './files/empty/push/' + telcoName + '/' + data, function (err) {
+                                                                        if (!err) {
+                                                                            console.log('[' + dateNow + '] : Move Empty File Telco ' + telcoName + ' If Ok');
+                                                                        } else {
+                                                                            console.log(err);
+                                                                        }
+                                                                    });
+                                                                else
+                                                                    console.log(err);
+                                                            });
+                                                        } else {
+                                                            fs.rename(folder + '/' + data, './files/empty/push/' + telcoName + '/' + data, function (err) {
+                                                                if (!err) {
+                                                                    console.log('[' + dateNow + '] : Move Empty File Telco ' + telcoName + ' Else Ok');
+                                                                } else {
+                                                                    console.log(err);
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                } catch (err) {
+                                                    console.log('error try catch telco ' + telcoName + ' create empty folder');
+                                                }
+                                            }
                                         } else {
                                             console.log(err);
                                         }
@@ -112,14 +160,14 @@ new CronJob('*/2 * * * * *', function () {
                                             if (!err) {
                                                 var contentParse = JSON.parse(content);
                                                 var link = resTelConf[0].address + '?username=' + resTelConf[0].username + '&password=' + resTelConf[0].password + '&msisdn=' + contentParse.msisdn + '&trxid=' + contentParse.trx_id + '&serviceId=' + contentParse.cost + '&sms=' + contentParse.content_field + '&shortname=1212121212';
-                                                
+
                                                 unlinkFile(folder + '/' + data, function (resDel) {
                                                     if (resDel === 'deleteOk') {
                                                         hitTelco(link, function (resHit) {
                                                             if (resHit.body !== 'ok') {
                                                                 contentParse.trx_id = resHit.body;
                                                             } else {
-                                                                console.log('bbbb');
+                                                                contentParse;
                                                             }
 
                                                             insertPush(contentParse, function (resInsert) {
