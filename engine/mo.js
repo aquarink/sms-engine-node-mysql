@@ -1,5 +1,4 @@
 var express = require('express');
-var jsonfile = require('jsonfile');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 var objId = require('mongodb').ObjectID;
@@ -20,8 +19,7 @@ router.get('/:telco', function (req, res, next) {
         var sms = req.query.sms;
         var trxId = req.query.trxid;
         var trxDate = req.query.trxdate;
-        var dateNow = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '').replace(':', '-').replace(':', '-');
-
+        var dateNow = new Date().toISOString().slice(0,10);
         var smsExplode = sms.split(" ");
         if (smsExplode[0] === 'reg') {
             keyword = smsExplode[1].replace(/\s+/g, '');
@@ -43,22 +41,7 @@ router.get('/:telco', function (req, res, next) {
             msisdnNew = '62' + msisdn.slice(1);
         }
 
-        // SMS Object
-        var smsObj = {
-            telco: telco,
-            shortcode: shortcode,
-            msisdn: msisdnNew,
-            sms_field: sms,
-            keyword: keyword,
-            trx_id: trxId,
-            trx_date: trxDate,
-            session_id: new objId(),
-            session_date: dateNow,
-            reg_type: reg
-        };
-
-        //var file2 = telco + '_' + shortcode + '_' + msisdnNew + '_' + sms + '_' + keyword + '_' + trxId + '_' + trxDate + '_' + new objId() + '_' + dateNow + '_' + reg + '.json';
-        var file = './files/mo/' + telco + '>' + shortcode + '>' + msisdnNew + '>' + sms + '>' + keyword + '>' + trxId + '>' + trxDate + '>' + dateNow + '>' + reg + '>' + new objId() + '.json';
+        var file = './files/mo/' + telco + '@' + shortcode + '@' + msisdnNew + '@' + sms + '@' + keyword + '@' + trxId + '@' + trxDate + '@' + dateNow + '@' + reg + '@' + new objId() + '.txt';
 
         //Check Folder Exist
         try {
@@ -76,7 +59,7 @@ router.get('/:telco', function (req, res, next) {
                 if (error.code === 'ENOENT') {
                     mkdirp('./files/mo', function (err) {
                         if (!err)
-                            jsonfile.writeFile(file, smsObj, {spaces: 2}, function (err) {
+                            fs.writeFile(file, "", function (err) {
                                 if (!err) {
                                     console.log('[' + dateNow + '] : Create File & Folder MO Ok');
                                 } else {
@@ -87,7 +70,7 @@ router.get('/:telco', function (req, res, next) {
                             console.log(err);
                     });
                 } else {
-                    jsonfile.writeFile(file, smsObj, {spaces: 2}, function (err) {
+                    fs.writeFile(file, "", function (err) {
                         if (!err) {
                             console.log('[' + dateNow + '] : Create File MO Ok');
                         } else {

@@ -77,7 +77,7 @@ new CronJob('*/2 * * * * *', function () {
                                                 try {
                                                     var contentParse = JSON.parse(content);
                                                     var link = resTelConf[0].address + '?username=' + resTelConf[0].username + '&password=' + resTelConf[0].password + '&msisdn=' + contentParse.msisdn + '&trxid=' + contentParse.trx_id + '&serviceId=' + contentParse.cost + '&sms=' + contentParse.content_field + '&shortname=1212121212';
-                                                    console.log(link)
+                                                    
                                                     unlinkFile(folder + '/' + data, function (resDel) {
                                                         if (resDel === 'deleteOk') {
                                                             hitTelco(link, function (resHit) {
@@ -138,9 +138,10 @@ new CronJob('*/2 * * * * *', function () {
                                                     console.log('error try catch telco ' + telcoName + ' create empty folder');
                                                 }
                                             }
-                                        } else {
-                                            console.log(err);
-                                        }
+                                        } 
+//                                        else {
+//                                            console.log(err);
+//                                        }
                                     });
                                 }, (one, two) => {
                                     if (two[0] === 'done') {
@@ -195,9 +196,10 @@ new CronJob('*/2 * * * * *', function () {
                 } catch (err) {
                     console.log('error try catch on ' + telcoName);
                 }
-            } else {
-                console.log(err);
-            }
+            } 
+//            else {
+//                console.log(err);
+//            }
         });
     } catch (err) {
         console.log('error try catch mo-read dir');

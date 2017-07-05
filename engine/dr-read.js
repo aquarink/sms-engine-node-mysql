@@ -12,82 +12,44 @@ new CronJob('* * * * * *', function () {
             if (!err) {
                 try {
                     filenames.forEach(function (filename) {
-                        fs.readFile(folder + filename, 'utf-8', function (err, content) {
-                            if (!err) {
-                                var stats = fs.statSync(folder + filename);
-                                var fileSizeInBytes = stats.size;
+                        try {
+                            var nameData = filename.split("@");
+                            // 0 = telco
+                            // 1 = shortcode
+                            // 2 = msisdn
+                            // 3 = trxId
+                            // 4 = trxDate
+                            // 5 = stat
+                            // 6 = sessionDate
+                            // 7 = sessionID
+                            
+                            var sessionID = nameData[7].split(".")[0];
 
-                                if (fileSizeInBytes > 100) {
-                                    try {
-                                        var contentParse = JSON.parse(content);
-
-                                        fs.unlink(folder + filename, function (err) {
-                                            if (!err) {
-                                                //Update Push Report
-                                                db.query('UPDATE tb_sms_push SET send_status = ? WHERE trx_id = ?', [contentParse.stat, contentParse.trx_id], function (err, results) {
-                                                    if (!err) {
-                                                        // Insert To DR Log
-                                                        db.query("INSERT INTO tb_dr SET ?", [contentParse], function (err, resInsert) {
-                                                            if (!err) {
-                                                                console.log('[' + dateNow + '] : Delete DR File, Update Push & Insert DR Data Ok');
-                                                            } else {
-                                                                console.log(err);
-                                                            }
-                                                        });
-                                                    } else {
-                                                        console.log(err);
-                                                    }
-                                                });
-                                            }
-                                        });
-
-                                    } catch (err) {
-                                        console.log('error try catch dr-read query');
-                                    }
-                                } else {
-                                    try {
-                                        function checkDirectory(directory, callback) {
-                                            fs.stat(directory, function (err, stats) {
-                                                if (err) {
-                                                    callback(err);
+                            fs.unlink(folder + filename, function (err) {
+                                if (!err) {
+                                    //Update Push Report
+                                    db.query('UPDATE tb_sms_push SET send_status = ? WHERE trx_id = ?', [nameData[5], nameData[3]], function (err, results) {
+                                        if (!err) {
+                                            // Insert To DR Log
+                                            db.query("INSERT INTO tb_dr (telco,shortcode,msisdn,trx_id,trx_date,session_id,session_date,stat) VALUES(?,?,?,?,?,?,?,?)",
+                                                    [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], sessionID, nameData[6],nameData[6]], function (err, resInsert) {
+                                                if (!err) {
+                                                    console.log('[' + dateNow + '] : Delete DR File, Update Push & Insert DR Data Ok');
                                                 } else {
-                                                    callback('ok');
+                                                    console.log(err);
                                                 }
                                             });
+                                        } else {
+                                            console.log(err);
                                         }
-
-                                        checkDirectory('./files/empty/dr', function (error) {
-                                            if (error.code === 'ENOENT') {
-                                                mkdirp('./files/empty/dr', function (err) {
-                                                    if (!err)
-                                                        fs.rename(folder + filename, './files/empty/dr/' + filename, function (err) {
-                                                            if (!err) {
-                                                                console.log('[' + dateNow + '] : Move Empty File DR-Read If Ok');
-                                                            } else {
-                                                                console.log(err);
-                                                            }
-                                                        });
-                                                    else
-                                                        console.log(err);
-                                                });
-                                            } else {
-                                                fs.rename(folder + filename, './files/empty/dr/' + filename, function (err) {
-                                                    if (!err) {
-                                                        console.log('[' + dateNow + '] : Move Empty File DR-Read Else Ok');
-                                                    } else {
-                                                        console.log(err);
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    } catch (err) {
-                                        console.log('error try catch dr-read create empty folder');
-                                    }
+                                    });
                                 }
-                            } else {
-                                console.log(err);
-                            }
-                        });
+                            });
+
+                        } catch (err) {
+                            console.log('error try catch dr-read query');
+                        }
+
                     });
                 } catch (err) {
                     console.log('error try catch dr-read foreach file');

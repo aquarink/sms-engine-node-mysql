@@ -1,5 +1,4 @@
 var express = require('express');
-var jsonfile = require('jsonfile');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 var objId = require('mongodb').ObjectID;
@@ -17,7 +16,7 @@ router.get('/:telco', function (req, res, next) {
         var trxId = req.query.trxid;
         var trxDate = req.query.trxdate;
         var stat = req.query.stat;
-        var dateNow = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+        var dateNow = new Date().toISOString().slice(0, 10);
 
         // Parsing msisdn 0 = 62
         var msisdnNew;
@@ -28,19 +27,7 @@ router.get('/:telco', function (req, res, next) {
             msisdnNew = '62' + msisdn.slice(1);
         }
 
-        // SMS Object
-        var smsObj = {
-            telco: telco,
-            shortcode: shortcode,
-            msisdn: msisdnNew,
-            trx_id: trxId,
-            trx_date: trxDate,
-            session_id: new objId(),
-            session_date: dateNow,
-            stat: stat
-        };
-
-        var file = './files/dr/DR-' + new objId() + '.json';
+        var file = './files/dr/' + telco + '@' + shortcode + '@' + msisdnNew + '@' + trxId + '@' + trxDate + '@' + stat + '@' + dateNow + '@' + new objId() + '.txt';
 
         //Check Folder Exist
         try {
@@ -58,7 +45,7 @@ router.get('/:telco', function (req, res, next) {
                 if (error.code === 'ENOENT') {
                     mkdirp('./files/dr', function (err) {
                         if (!err)
-                            jsonfile.writeFile(file, smsObj, {spaces: 2}, function (err) {
+                            fs.writeFile(file, "", function (err) {
                                 if (!err) {
                                     console.log('[' + dateNow + '] : Create File & Folder DR Ok');
                                 } else {
@@ -69,7 +56,7 @@ router.get('/:telco', function (req, res, next) {
                             console.log(err);
                     });
                 } else {
-                    jsonfile.writeFile(file, smsObj, {spaces: 2}, function (err) {
+                    fs.writeFile(file, "", function (err) {
                         if (!err) {
                             console.log('[' + dateNow + '] : Create File DR Ok');
                         } else {
