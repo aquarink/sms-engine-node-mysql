@@ -1,11 +1,11 @@
 var fs = require('fs');
-var mkdirp = require('mkdirp');
+var moment = require('moment-timezone');
 var CronJob = require('cron').CronJob;
 var db = require('./mysql');
 
 new CronJob('* * * * * *', function () {
     var folder = './files/mo/';
-    var dateNow = new Date().toISOString().slice(0, 10);
+    var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
     try {
 
         fs.readdir(folder, function (err, filenames) {
@@ -13,18 +13,10 @@ new CronJob('* * * * * *', function () {
                 try {
                     filenames.forEach(function (filename) {
                         var nameData = filename.split("@");
-                        // 0 = telco
-                        // 1 = shortcode
-                        // 2 = msisdn
-                        // 3 = sms
-                        // 4 = keyword
-                        // 5 = trxId
-                        // 6 = trxDate
-                        // 7 = sessionDate
-                        // 8 = reg
-                        // 9 = sessionID
-                        
-                         var sessionID = nameData[9].split(".")[0];
+
+                        var theFile = folder + filename;
+
+                        var sessionID = nameData[9].split(".")[0];
 
                         try {
                             db.query('SELECT * FROM tb_keyword WHERE keyword = ?', [nameData[4]], function (err, results) {
@@ -32,16 +24,6 @@ new CronJob('* * * * * *', function () {
                                     if (results.length > 0) {
                                         for (var i = 0; i < results.length; i++) {
                                             try {
-                                                function checkDirectory(directory, callback) {
-                                                    fs.stat(directory, function (err, stats) {
-                                                        if (err) {
-                                                            callback(err);
-                                                        } else {
-                                                            callback('ok');
-                                                        }
-                                                    });
-                                                }
-
                                                 db.query('SELECT * FROM tb_members WHERE telco = ? AND msisdn = ? AND shortcode = ? AND app = ?', [nameData[0], nameData[2], nameData[1], nameData[4]], function (err, checkData) {
                                                     if (!err) {
                                                         if (checkData.length > 0) {
@@ -68,107 +50,56 @@ new CronJob('* * * * * *', function () {
                                                         console.log(err);
                                                     }
                                                 });
-                                                checkDirectory('./files/app/' + nameData[4], function (error) {
-                                                    if (error.code === 'ENOENT') {
-                                                        mkdirp('./files/app/' + nameData[4], function (err) {
-                                                            if (!err)
-                                                                fs.rename(folder + filename, './files/app/' + nameData[4] + '/' + filename, function (err) {
-                                                                    if (!err) {
-                                                                        db.query('INSERT INTO tb_mo (telco,shortcode,msisdn,sms_field,keyword,trx_id,trx_date,session_id,session_date,reg_type) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                                                                                [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], nameData[5], nameData[6], sessionID, nameData[7], nameData[8]], function (err, resInsert) {
-                                                                            if (!err) {
-                                                                                console.log('[' + dateNow + '] : Make Dir, Move File MO & Insert MO Log If Ok');
-                                                                            } else {
-                                                                                console.log(err);
-                                                                            }
-                                                                        });
-                                                                    } 
-//                                                                    else {
-//                                                                        console.log(err);
-//                                                                    }
-                                                                });
-                                                            else
-                                                                console.log(err);
-                                                        });
-                                                    } else {
-                                                        fs.rename(folder + filename, './files/app/' + nameData[4] + '/' + filename, function (err) {
+
+                                                //Insert to Mo Temporary
+                                                db.query('INSERT INTO tb_mo_temp (telco,shortcode,msisdn,sms_field,keyword,trx_id,trx_date,session_id,session_date,reg_type) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                                                        [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], nameData[5], nameData[6], sessionID, nameData[7], nameData[8]], function (err, resInsert) {
+                                                    if (!err) {
+                                                        //Insert to Mo Log
+                                                        db.query('INSERT INTO tb_mo_log (telco,shortcode,msisdn,sms_field,keyword,trx_id,trx_date,session_id,session_date,reg_type) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                                                                [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], nameData[5], nameData[6], sessionID, nameData[7], nameData[8]], function (err, resInsert) {
                                                             if (!err) {
-                                                                db.query('INSERT INTO tb_mo (telco,shortcode,msisdn,sms_field,keyword,trx_id,trx_date,session_id,session_date,reg_type) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                                                                        [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], nameData[5], nameData[6], sessionID, nameData[7], nameData[8]], function (err, resInsert) {
+                                                                fs.unlink(theFile, function (err) {
                                                                     if (!err) {
-                                                                        console.log('[' + dateNow + '] : Make Dir, Move File MO & Insert MO Log Else Ok');
-                                                                    } else {
-                                                                        console.log(err);
+                                                                        console.log('[' + dateNow + '] : Insert MO Temp, MO Log & Unlink File Ok');
                                                                     }
                                                                 });
-                                                            } 
-//                                                            else {
-//                                                                console.log(err);
-//                                                            }
+
+                                                            } else {
+                                                                console.log(err);
+                                                            }
                                                         });
+                                                    } else {
+                                                        console.log(err);
                                                     }
                                                 });
+
                                             } catch (err) {
-                                                console.log('error try catch mo-read create App folder');
+                                                console.log('error try catch mo-read 82');
                                             }
                                         }
                                     } else {
                                         // Wrong Keyword
                                         try {
-                                            function checkDirectory(directory, callback) {
-                                                fs.stat(directory, function (err, stats) {
-                                                    if (err) {
-                                                        callback(err);
-                                                    } else {
-                                                        callback('ok');
-                                                    }
-                                                });
-                                            }
-
-                                            checkDirectory('./files/app/others', function (error) {
-                                                if (error.code === 'ENOENT') {
-                                                    mkdirp('./files/app/others', function (err) {
-                                                        if (!err)
-                                                            fs.rename(folder + filename, './files/app/others/' + filename, function (err) {
-                                                                if (!err) {
-                                                                    // Insert To MO Log
-                                                                    db.query('INSERT INTO tb_mo (telco,shortcode,msisdn,sms_field,keyword,trx_id,trx_date,session_id,session_date,reg_type) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                                                                            [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], nameData[5], nameData[6], sessionID, dateNow, nameData[8]], function (err, resInsert) {
-                                                                        if (!err) {
-                                                                            console.log('[' + dateNow + '] : Make Dir, Move File MO to Wrong Keyword & Insert MO Log If Ok');
-                                                                        } else {
-                                                                            console.log(err);
-                                                                        }
-                                                                    });
-                                                                } 
-//                                                                else {
-//                                                                    console.log(err);
-//                                                                }
-                                                            });
-                                                        else
+                                            //Insert to Mo Temporary
+                                            db.query('INSERT INTO tb_mo_temp (telco,shortcode,msisdn,sms_field,keyword,trx_id,trx_date,session_id,session_date,reg_type) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                                                    [nameData[0], nameData[1], nameData[2], nameData[3], 'wrong', nameData[5], nameData[6], sessionID, nameData[7], nameData[8]], function (err, resInsert) {
+                                                if (!err) {
+                                                    //Insert to Mo Log
+                                                    db.query('INSERT INTO tb_mo_log (telco,shortcode,msisdn,sms_field,keyword,trx_id,trx_date,session_id,session_date,reg_type) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                                                            [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], nameData[5], nameData[6], sessionID, nameData[7], nameData[8]], function (err, resInsert) {
+                                                        if (!err) {
+                                                            console.log('[' + dateNow + '] : Insert MO Temp & MO Log Wrong Ok');
+                                                        } else {
                                                             console.log(err);
+                                                        }
                                                     });
                                                 } else {
-                                                    fs.rename(folder + filename, './files/app/others/' + filename, function (err) {
-                                                        if (!err) {
-                                                            // Insert To MO Log
-                                                            db.query('INSERT INTO tb_mo (telco,shortcode,msisdn,sms_field,keyword,trx_id,trx_date,session_id,session_date,reg_type) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                                                                    [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], nameData[5], nameData[6], sessionID, dateNow, nameData[8]], function (err, resInsert) {
-                                                                if (!err) {
-                                                                    console.log('[' + dateNow + '] : Move File MO to Wrong Keyword & Insert MO Log Else Ok');
-                                                                } else {
-                                                                    console.log(err);
-                                                                }
-                                                            });
-                                                        } 
-//                                                        else {
-//                                                            console.log(err);
-//                                                        }
-                                                    });
+                                                    console.log(err);
                                                 }
                                             });
                                         } catch (err) {
-                                            console.log('error try catch mo-read create Wrong Keyword folder');
+                                            console.log('error try catch mo-read create Wrong Keyword 106');
                                         }
                                     }
                                 } else {
@@ -176,18 +107,16 @@ new CronJob('* * * * * *', function () {
                                 }
                             });
                         } catch (err) {
-                            console.log('error try catch mo-read query');
+                            console.log('error try catch mo-read query 114');
                         }
                     });
                 } catch (err) {
-                    console.log('error try catch mo-read foreach file');
+                    console.log('error try catch mo-read foreach file 118');
                 }
-            } else {
-                // console.log(err); // Tiak ada folder atau file
             }
         });
     } catch (err) {
-        console.log('error try catch mo-read dir');
+        console.log('error try catch mo-read dir 123');
     }
 }, null, true, 'Asia/Jakarta');
 

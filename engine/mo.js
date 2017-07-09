@@ -1,6 +1,7 @@
 var express = require('express');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
+var moment = require('moment-timezone');
 var objId = require('mongodb').ObjectID;
 var router = express.Router();
 
@@ -8,7 +9,6 @@ var router = express.Router();
 router.get('/:telco', function (req, res, next) {
 
     res.send('ok');
-    //console.log(req.query);
     if (JSON.stringify(req.query) !== '{}') {
         var keyword;
         var reg;
@@ -19,7 +19,9 @@ router.get('/:telco', function (req, res, next) {
         var sms = req.query.sms;
         var trxId = req.query.trxid;
         var trxDate = req.query.trxdate;
-        var dateNow = new Date().toISOString().slice(0,10);
+        
+        var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
+
         var smsExplode = sms.split(" ");
         if (smsExplode[0] === 'reg') {
             keyword = smsExplode[1].replace(/\s+/g, '');
@@ -42,6 +44,7 @@ router.get('/:telco', function (req, res, next) {
         }
 
         var file = './files/mo/' + telco + '@' + shortcode + '@' + msisdnNew + '@' + sms + '@' + keyword + '@' + trxId + '@' + trxDate + '@' + dateNow + '@' + reg + '@' + new objId() + '.txt';
+
 
         //Check Folder Exist
         try {
