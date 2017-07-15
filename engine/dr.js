@@ -1,6 +1,7 @@
 var express = require('express');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
+var moment = require('moment-timezone');
 var objId = require('mongodb').ObjectID;
 var router = express.Router();
 
@@ -16,7 +17,8 @@ router.get('/:telco', function (req, res, next) {
         var trxId = req.query.trxid;
         var trxDate = req.query.trxdate;
         var stat = req.query.stat;
-        var dateNow = new Date().toISOString().slice(0, 10);
+        
+        var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
 
         // Parsing msisdn 0 = 62
         var msisdnNew;

@@ -1,14 +1,15 @@
 var jsonfile = require('jsonfile');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
+var moment = require('moment-timezone');
 var CronJob = require('cron').CronJob;
 var db = require('../mysql');
 
 var appName = 'bola';
 
-new CronJob('*/2 * * * * *', function () {
+new CronJob('*/1 * * * * *', function () {
     var folder = './files/app/' + appName;
-    var dateNow = new Date().toISOString().slice(0, 10);
+    var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
     try {
 
         fs.readdir(folder, function (err, filenames) {
@@ -28,8 +29,6 @@ new CronJob('*/2 * * * * *', function () {
                         // 8 = reg
                         // 9 = sessionID
 
-//                        fs.readFile(files, 'utf-8', function (err, content) {
-//                            if (!err) {
                         try {
                             function checkKeyword(keyWord, callback) {
                                 db.query('SELECT * FROM tb_keyword WHERE keyword = ?', [keyWord], function (err, keywordData) {
@@ -151,7 +150,7 @@ new CronJob('*/2 * * * * *', function () {
 
                                                         "trx_id": nameData[5],
                                                         "trx_date": nameData[6],
-                                                        "session_id": 'w' + nameData[9],
+                                                        "session_id": 'w' + nameData[9].split(".")[0],
                                                         "session_date": dateNow,
                                                         "reg_type": nameData[8],
 
@@ -189,9 +188,9 @@ new CronJob('*/2 * * * * *', function () {
                                                                     "content_number": resContent[l].content_number,
                                                                     "content_field": resContent[l].content_field,
 
-                                                                    "trx_id": nameData[5],
+                                                                    "trx_id": "",
                                                                     "trx_date": nameData[6],
-                                                                    "session_id": 'w' + nameData[9],
+                                                                    "session_id": nameData[9].split(".")[0],
                                                                     "session_date": dateNow,
                                                                     "reg_type": nameData[8],
 
@@ -213,8 +212,6 @@ new CronJob('*/2 * * * * *', function () {
                                                                         unlinkFile(files, function (resDel) {
                                                                             if (resDel === 'delOk') {
                                                                                 console.log('[' + dateNow + '] : Create File & Remove Apps - Apps Push Ok');
-                                                                            } else {
-                                                                                console.log('bb');
                                                                             }
                                                                         });
                                                                     } else {
@@ -230,16 +227,13 @@ new CronJob('*/2 * * * * *', function () {
                                             });
                                         });
                                     }
+                                } else {
+                                    console.log('bolaaaaaa');
                                 }
                             });
                         } catch (err) {
                             console.log('error try catch mo-read query');
                         }
-
-//                            } else {
-//                                console.log(err);
-//                            }
-//                        });
                     });
                 } catch (err) {
                     console.log('error try catch mo-read foreach file');

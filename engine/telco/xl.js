@@ -1,8 +1,8 @@
-var jsonfile = require('jsonfile');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 const async = require('async');
 var reQuest = require('request');
+var moment = require('moment-timezone');
 var CronJob = require('cron').CronJob;
 var db = require('../mysql');
 
@@ -10,7 +10,8 @@ var telcoName = 'xl';
 
 new CronJob('*/2 * * * * *', function () {
     var folder = './files/push/' + telcoName;
-    var dateNow = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '').replace(':', '-').replace(':', '-');
+    //var dateNow = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '').replace(':', '-').replace(':', '-');
+    var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
     try {
 
         fs.readdir(folder, function (err, filenames) {
@@ -83,8 +84,6 @@ new CronJob('*/2 * * * * *', function () {
                                                             hitTelco(link, function (resHit) {
                                                                 if (resHit.body !== 'ok') {
                                                                     contentParse.trx_id = resHit.body;
-                                                                } else {
-                                                                    console.log('aaaaa');
                                                                 }
 
                                                                 insertPush(contentParse, function (resInsert) {

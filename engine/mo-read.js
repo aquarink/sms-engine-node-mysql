@@ -1,11 +1,12 @@
 var fs = require('fs');
 var mkdirp = require('mkdirp');
+var moment = require('moment-timezone');
 var CronJob = require('cron').CronJob;
 var db = require('./mysql');
 
 new CronJob('* * * * * *', function () {
     var folder = './files/mo/';
-    var dateNow = new Date().toISOString().slice(0, 10);
+    var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
     try {
 
         fs.readdir(folder, function (err, filenames) {
@@ -96,7 +97,7 @@ new CronJob('* * * * * *', function () {
                                                                 db.query('INSERT INTO tb_mo (telco,shortcode,msisdn,sms_field,keyword,trx_id,trx_date,session_id,session_date,reg_type) VALUES(?,?,?,?,?,?,?,?,?,?)',
                                                                         [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], nameData[5], nameData[6], sessionID, nameData[7], nameData[8]], function (err, resInsert) {
                                                                     if (!err) {
-                                                                        console.log('[' + dateNow + '] : Make Dir, Move File MO & Insert MO Log Else Ok');
+                                                                        console.log('[' + dateNow + '] : Move File MO & Insert MO Log Else Ok');
                                                                     } else {
                                                                         console.log(err);
                                                                     }

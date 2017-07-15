@@ -1,11 +1,11 @@
 var fs = require('fs');
-var mkdirp = require('mkdirp');
+var moment = require('moment-timezone');
 var CronJob = require('cron').CronJob;
 var db = require('./mysql');
 
 new CronJob('* * * * * *', function () {
     var folder = './files/dr/';
-    var dateNow = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '').replace(':', '-').replace(':', '-');
+    var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
     try {
 
         fs.readdir(folder, function (err, filenames) {
