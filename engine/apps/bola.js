@@ -1,119 +1,166 @@
+<<<<<<< HEAD
 var jsonfile = require('jsonfile');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 var moment = require('moment-timezone');
+=======
+var moment = require('moment-timezone');
+const async = require('async');
+>>>>>>> 71e5d820a493c980174b013e4c77656d497db056
 var CronJob = require('cron').CronJob;
 var db = require('../mysql');
 
 var appName = 'bola';
 
 new CronJob('*/1 * * * * *', function () {
+<<<<<<< HEAD
     var folder = './files/app/' + appName;
+=======
+>>>>>>> 71e5d820a493c980174b013e4c77656d497db056
     var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
     try {
 
-        fs.readdir(folder, function (err, filenames) {
-            if (!err) {
-                try {
-                    filenames.forEach(function (filename) {
-                        var files = folder + '/' + filename;
-                        var nameData = filename.split("@");
-                        // 0 = telco
-                        // 1 = shortcode
-                        // 2 = msisdn
-                        // 3 = sms
-                        // 4 = keyword
-                        // 5 = trxId
-                        // 6 = trxDate
-                        // 7 = dateNow
-                        // 8 = reg
-                        // 9 = sessionID
+        function insertPush(obj, callback) {
+            db.query('INSERT INTO tb_sms_push_temp SET ?', [obj], function (err, resInsert) {
+                if (!err) {
+                    callback('insertOk');
+                } else {
+                    callback(err);
+                }
+            });
+        }
 
+        function getContent(seq, callback) {
+            db.query('SELECT content_number,content_field FROM tb_apps_content WHERE content_number = ?', [seq], function (err, contentData) {
+                if (!err) {
+                    callback(contentData);
+                } else {
+                    callback('err');
+                }
+            });
+        }
+
+<<<<<<< HEAD
                         try {
                             function checkKeyword(keyWord, callback) {
                                 db.query('SELECT * FROM tb_keyword WHERE keyword = ?', [keyWord], function (err, keywordData) {
                                     if (!err) {
                                         callback(keywordData);
+=======
+        db.query('SELECT * FROM tb_mo_temp WHERE keyword = ?', [appName], function (err, moTemp) {
+            if (!err) {
+                async.map(moTemp, function (data, cb) {
+                    db.query('SELECT content_number FROM tb_sms_push WHERE telco = ? AND shortcode = ? AND msisdn = ? AND keyword = ? AND session_date = ? ORDER BY id_push DESC LIMIT 1', [data.telco, data.shortcode, data.msisdn, data.keyword, data.session_date], function (err, smsPushData) {
+                        if (!err) {
+                            if (smsPushData.length === 0) {
+                                // Welcome Message
+                                var WelPushObj = {
+                                    "telco": data.telco,
+                                    "shortcode": data.shortcode,
+                                    "msisdn": data.msisdn,
+                                    "sms_field": data.sms_field,
+                                    "keyword": data.keyword,
+
+                                    "content_number": 0,
+                                    "content_field": "Welcome Message",
+
+                                    "trx_id": data.trx_id,
+                                    "trx_date": data.trx_date,
+                                    "session_id": 'w-' + data.session_id,
+                                    "session_date": data.session_date,
+                                    "reg_type": data.reg_type,
+
+                                    "type": "pull",
+                                    "cost": 0,
+                                    "send_status": "1"
+                                };
+
+                                insertPush(WelPushObj, function (resInsert) {
+                                    if (resInsert === 'insertOk') {
+                                        console.log('[' + dateNow + '] : Make Welcome Message Ok');
+>>>>>>> 71e5d820a493c980174b013e4c77656d497db056
                                     }
                                 });
-                            }
 
-                            function getContent(seq, callback) {
-                                db.query('SELECT content_number,content_field FROM tb_apps_content WHERE content_number = ?', [seq], function (err, contentData) {
+                                db.query('SELECT content_number,content_field FROM tb_apps_content WHERE content_number = ?', [1], function (err, content) {
                                     if (!err) {
-                                        callback(contentData);
-                                    }
-                                });
-                            }
+                                        db.query('SELECT * FROM tb_keyword WHERE keyword = ?', [appName], function (err, keywordData) {
+                                            if (!err) {
+                                                db.query('SELECT * FROM tb_app_config WHERE id_app = ?', [keywordData[0].id_app], function (err, appConfig) {
+                                                    if (!err) {
+                                                        var pushSms = {
+                                                            "telco": data.telco,
+                                                            "shortcode": data.shortcode,
+                                                            "msisdn": data.msisdn,
+                                                            "sms_field": data.sms_field,
+                                                            "keyword": data.keyword,
 
-                            function checkSmsPush(msisdn, sesDate, callback) {
-                                db.query('SELECT msisdn,content_number,session_date FROM tb_sms_push WHERE msisdn = ? AND session_date = ?', [msisdn, sesDate], function (err, smsPushData) {
-                                    if (!err) {
-                                        callback(smsPushData);
-                                    }
-                                });
-                            }
+                                                            "content_number": content[0].content_number,
+                                                            "content_field": content[0].content_field,
 
-                            function appConfig(appId, callback) {
-                                db.query('SELECT * FROM tb_app WHERE id_app = ?', [appId], function (err, appCnfg) {
-                                    if (!err) {
-                                        callback(appCnfg);
-                                    }
-                                });
-                            }
+                                                            "trx_id": "",
+                                                            "trx_date": data.trx_date,
+                                                            "session_id": data.session_id,
+                                                            "session_date": dateNow,
+                                                            "reg_type": data.reg_type,
 
-                            function makeObjFile(obj, callback) {
-                                var file = './files/push/' + obj.telco + '/push-' + obj.content_number + '-' + obj.session_id + '.json';
-                                //Check Folder Exist
-                                try {
-                                    function checkDirectory(directory, callback) {
-                                        fs.stat(directory, function (err, stats) {
-                                            if (err) {
-                                                callback(err);
-                                            } else {
-                                                callback('ok');
+                                                            "type": "pull",
+                                                            "cost": appConfig[0].cost_pull,
+                                                            "send_status": "1"
+                                                        };
+
+                                                        cb(null, pushSms);
+                                                    }
+                                                });
                                             }
                                         });
-                                    }
 
-                                    checkDirectory('./files/push/' + obj.telco, function (error) {
-                                        if (error.code === 'ENOENT') {
-                                            mkdirp('./files/push/' + obj.telco, function (err) {
-                                                if (!err)
-                                                    jsonfile.writeFile(file, obj, {spaces: 2}, function (err) {
-                                                        if (!err) {
-                                                            callback('if');
-                                                        } else {
-                                                            callback('if ' + err);
-                                                        }
-                                                    });
-                                                else
-                                                    console.log(err);
-                                            });
-                                        } else {
-                                            jsonfile.writeFile(file, obj, {spaces: 2}, function (err) {
-                                                if (!err) {
-                                                    callback('else');
-                                                } else {
-                                                    callback('else ' + err);
-                                                }
-                                            });
-                                        }
-                                    });
-                                } catch (err) {
-                                    console.log('error try catch make Obj File');
-                                }
-                            }
-
-                            function unlinkFile(theFile, callback) {
-                                fs.unlink(theFile, function (err) {
-                                    if (!err) {
-                                        callback('delOk');
                                     } else {
-                                        callback(err);
+                                        console.log('err get content 1');
+                                    }
+                                });
+                            } else {
+                                var contentSeq = smsPushData[0].content_number + 1;
+
+                                db.query('SELECT content_number,content_field FROM tb_apps_content WHERE content_number = ?', [contentSeq], function (err, content) {
+                                    if (!err) {
+                                        db.query('SELECT * FROM tb_keyword WHERE keyword = ?', [appName], function (err, keywordData) {
+                                            if (!err) {
+                                                db.query('SELECT * FROM tb_app_config WHERE id_app = ?', [keywordData[0].id_app], function (err, appConfig) {
+                                                    if (!err) {
+                                                        var pushSms = {
+                                                            "telco": data.telco,
+                                                            "shortcode": data.shortcode,
+                                                            "msisdn": data.msisdn,
+                                                            "sms_field": data.sms_field,
+                                                            "keyword": data.keyword,
+
+                                                            "content_number": content[0].content_number,
+                                                            "content_field": content[0].content_field,
+
+                                                            "trx_id": "",
+                                                            "trx_date": data.trx_date,
+                                                            "session_id": data.session_id,
+                                                            "session_date": dateNow,
+                                                            "reg_type": data.reg_type,
+
+                                                            "type": "pull",
+                                                            "cost": appConfig[0].cost_pull,
+                                                            "send_status": "1"
+                                                        };
+
+                                                        cb(null, pushSms);
+                                                    }
+                                                });
+                                            }
+                                        });
+
+                                    } else {
+                                        console.log('err get content 2');
                                     }
                                 });
                             }
+<<<<<<< HEAD
 
 
                             checkKeyword(nameData[4], function (resKeyword) {
@@ -229,21 +276,30 @@ new CronJob('*/1 * * * * *', function () {
                                     }
                                 } else {
                                     console.log('bolaaaaaa');
-                                }
-                            });
-                        } catch (err) {
-                            console.log('error try catch mo-read query');
+=======
+                        } else {
+                            console.log('sms push data search error');
                         }
                     });
-                } catch (err) {
-                    console.log('error try catch mo-read foreach file');
-                }
+                }, (one, two) => {
+                    insertPush(two[0], function (resInsert) {
+                        if (resInsert === 'insertOk') {
+                            db.query('DELETE FROM tb_mo_temp WHERE session_id = ?', [two[0].session_id], function (err, resDelete) {
+                                if (!err) {
+                                    console.log('[' + dateNow + '] : Make Content Message & Delete MO Temp Ok');
+>>>>>>> 71e5d820a493c980174b013e4c77656d497db056
+                                }
+                            });
+                        }
+                    });
+                });
             } else {
-                console.log(err);
+                console.log('keyword search error');
             }
         });
+
     } catch (err) {
-        console.log('error try catch mo-read dir');
+        console.log('error try catch ' + appName);
     }
 }, null, true, 'Asia/Jakarta');
 

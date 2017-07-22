@@ -31,7 +31,7 @@ new CronJob('* * * * * *', function () {
                                     db.query('UPDATE tb_sms_push SET send_status = ? WHERE trx_id = ?', [nameData[5], nameData[3]], function (err, results) {
                                         if (!err) {
                                             // Insert To DR Log
-                                            db.query("INSERT INTO tb_dr (telco,shortcode,msisdn,trx_id,trx_date,session_id,session_date,stat) VALUES(?,?,?,?,?,?,?,?)",
+                                            db.query("INSERT INTO tb_dr_log (telco,shortcode,msisdn,trx_id,trx_date,session_id,session_date,stat) VALUES(?,?,?,?,?,?,?,?)",
                                                     [nameData[0], nameData[1], nameData[2], nameData[3], nameData[4], sessionID, nameData[6],nameData[6]], function (err, resInsert) {
                                                 if (!err) {
                                                     console.log('[' + dateNow + '] : Delete DR File, Update Push & Insert DR Data Ok');

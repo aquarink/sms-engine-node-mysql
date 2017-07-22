@@ -8,72 +8,46 @@ var db = require('../mysql');
 
 var telcoName = 'xl';
 
+<<<<<<< HEAD
 new CronJob('*/2 * * * * *', function () {
     var folder = './files/push/' + telcoName;
     //var dateNow = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '').replace(':', '-').replace(':', '-');
     var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
     try {
+=======
+new CronJob('*/1 * * * * *', function () {
+    var dateNow = moment().tz("Asia/Jakarta").format("YYYY-MM-DD-HH-mm-ss");
+>>>>>>> 71e5d820a493c980174b013e4c77656d497db056
 
-        fs.readdir(folder, function (err, filenames) {
+    try {
+        db.query('SELECT * FROM tb_telco_config WHERE telco_name = ?', [telcoName], function (err, telcoConfig) {
             if (!err) {
-                try {
-                    function telcoConfig(telName, callback) {
-                        db.query('SELECT * FROM tb_telco_config WHERE telco_name = ?', [telName], function (err, telCnfg) {
-                            if (!err) {
-                                callback(telCnfg);
-                            }
-                        });
-                    }
+                db.query('SELECT * FROM tb_sms_push_temp WHERE telco = ? LIMIT ?', [telcoName, telcoConfig[0].push_limit], function (err, smsPushData) {
+                    if (!err) {
+                        async.map(smsPushData, function (data, cb) {
+                            var link = telcoConfig[0].address + '?username=' + telcoConfig[0].username + '&password=' + telcoConfig[0].password + '&msisdn=' + data.msisdn + '&trxid=' + data.trx_id + '&serviceId=' + data.cost + '&sms=' + data.content_field + '&shortname=1212121212';
 
-                    function unlinkFile(theFile, callback) {
-                        fs.unlink(theFile, function (err) {
-                            if (!err) {
-                                callback('deleteOk');
-                            } else {
-                                callback(err);
-                            }
-                        });
-                    }
-
-                    function insertPush(obj, callback) {
-                        db.query('INSERT INTO tb_sms_push SET ?', [obj], function (err, resInsert) {
-                            if (!err) {
-                                callback('insertOk');
-                            } else {
-                                callback(err);
-                            }
-                        });
-                    }
-
-                    function hitTelco(url, callback) {
-                        reQuest(url, (requestErr, response, body) => {
-                            if (!requestErr) {
-                                if (response.statusCode === 200) {
-                                    const newData = {
-                                        body
-                                    };
-                                    callback(newData);
+                            reQuest(link, (requestErr, response, body) => {
+                                if (!requestErr) {
+                                    if (response.statusCode === 200) {
+                                        const newData = {
+                                            'data': data,
+                                            body
+                                        };
+                                        cb(null, newData);
+                                    } else {
+                                        cb('not200');
+                                    }
                                 } else {
-                                    callback('not 200');
+                                    cb('requestErr');
                                 }
+                            });
+                        }, (one, two) => {
+                            if (one === 'not200' || one === 'requestErr') {
+                                console.log('Error 200 or Error Request');
                             } else {
-                                callback(requestErr);
-                            }
-                        });
-                    }
 
-                    telcoConfig(telcoName, function (resTelConf) {
-
-                        if (filenames.length > resTelConf[0].push_limit) {
-                            for (var offset = 0; offset < resTelConf[0].push_limit; ) {
-                                var f = [];
-                                f.push(filenames[offset]);
-                                async.map(f, function (data, cb) {
-                                    fs.readFile(folder + '/' + data, 'utf-8', function (err, content) {
-                                        if (!err) {
-                                            var stats = fs.statSync(folder + '/' + data);
-                                            var fileSizeInBytes = stats.size;
-
+<<<<<<< HEAD
                                             if (fileSizeInBytes > 100) {
                                                 try {
                                                     var contentParse = JSON.parse(content);
@@ -85,120 +59,68 @@ new CronJob('*/2 * * * * *', function () {
                                                                 if (resHit.body !== 'ok') {
                                                                     contentParse.trx_id = resHit.body;
                                                                 }
+=======
+                                async.map(two, function (dataPush, callback) {
+                                    if (dataPush.data.trx_id === '') {
+                                        dataPush.data.trx_id = dataPush.body;
+>>>>>>> 71e5d820a493c980174b013e4c77656d497db056
 
-                                                                insertPush(contentParse, function (resInsert) {
-                                                                    cb(null, 'done');
-                                                                });
-                                                            });
-                                                        } else {
-                                                            console.log('more error');
-                                                        }
-                                                    });
-                                                } catch (err) {
-                                                    console.log('error try catch Telco ' + telcoName + ' file size');
-                                                }
-                                            } else {
-                                                try {
-                                                    function checkDirectory(directory, callback) {
-                                                        fs.stat(directory, function (err, stats) {
-                                                            if (err) {
-                                                                callback(err);
-                                                            } else {
-                                                                callback('ok');
-                                                            }
-                                                        });
-                                                    }
-
-                                                    checkDirectory('./files/empty/push/' + telcoName, function (error) {
-                                                        if (error.code === 'ENOENT') {
-                                                            mkdirp('./files/empty/push/' + telcoName, function (err) {
-                                                                if (!err)
-                                                                    fs.rename(folder + '/' + data, './files/empty/push/' + telcoName + '/' + data, function (err) {
-                                                                        if (!err) {
-                                                                            console.log('[' + dateNow + '] : Move Empty File Telco ' + telcoName + ' If Ok');
-                                                                        } else {
-                                                                            console.log(err);
-                                                                        }
-                                                                    });
-                                                                else
-                                                                    console.log(err);
-                                                            });
-                                                        } else {
-                                                            fs.rename(folder + '/' + data, './files/empty/push/' + telcoName + '/' + data, function (err) {
-                                                                if (!err) {
-                                                                    console.log('[' + dateNow + '] : Move Empty File Telco ' + telcoName + ' Else Ok');
-                                                                } else {
-                                                                    console.log(err);
-                                                                }
-                                                            });
-                                                        }
-                                                    });
-                                                } catch (err) {
-                                                    console.log('error try catch telco ' + telcoName + ' create empty folder');
-                                                }
-                                            }
-                                        } 
-//                                        else {
-//                                            console.log(err);
-//                                        }
-                                    });
-                                }, (one, two) => {
-                                    if (two[0] === 'done') {
-                                        console.log('[' + dateNow + '] : Unlink, Push & Insert Data on Telco ' + telcoName + ' More Limit Ok');
-                                    }
-                                });
-
-                                offset += 1;
-                            }
-                        } else {
-                            if (filenames.length > 0) {
-                                for (var offset = 0; offset < filenames.length; offset++) {
-                                    var f = [];
-                                    f.push(filenames[offset]);
-                                    async.map(f, function (data, cb) {
-                                        fs.readFile(folder + '/' + data, 'utf-8', function (err, content) {
+                                        db.query('DELETE FROM tb_sms_push_temp WHERE session_id = ?', [dataPush.data.session_id], function (err, resDelete) {
                                             if (!err) {
-                                                var contentParse = JSON.parse(content);
-                                                var link = resTelConf[0].address + '?username=' + resTelConf[0].username + '&password=' + resTelConf[0].password + '&msisdn=' + contentParse.msisdn + '&trxid=' + contentParse.trx_id + '&serviceId=' + contentParse.cost + '&sms=' + contentParse.content_field + '&shortname=1212121212';
-
-                                                unlinkFile(folder + '/' + data, function (resDel) {
-                                                    if (resDel === 'deleteOk') {
-                                                        hitTelco(link, function (resHit) {
-                                                            if (resHit.body !== 'ok') {
-                                                                contentParse.trx_id = resHit.body;
-                                                            } else {
-                                                                contentParse;
-                                                            }
-
-                                                            insertPush(contentParse, function (resInsert) {
-                                                                cb(null, 'done');
-                                                            });
-                                                        });
+                                                db.query('INSERT INTO tb_sms_push SET ?', [dataPush.data], function (err, resInsert) {
+                                                    if (!err) {
+                                                        console.log('[' + dateNow + '] : Push Content Message & Delete Push Temp if Ok');
                                                     } else {
-                                                        console.log('less error');
+                                                        console.log('err insert if');
                                                     }
                                                 });
                                             } else {
-                                                console.log(err);
+                                                console.log('err delete if');
                                             }
                                         });
-                                    }, (one, two) => {
-                                        if (two[0] === 'done') {
-                                            console.log('[' + dateNow + '] : Unlink, Push & Insert Data on Telco ' + telcoName + ' Less Limit Ok');
-                                        }
-                                    });
-                                }
-                            }
-                        }
+                                    } else {
+                                        db.query('DELETE FROM tb_sms_push_temp WHERE session_id = ?', [dataPush.data.session_id], function (err, resDelete) {
+                                            if (!err) {
+                                                db.query('INSERT INTO tb_sms_push SET ?', [dataPush.data], function (err, resInsert) {
+                                                    if (!err) {
+                                                        console.log('[' + dateNow + '] : Push Content Message & Delete Push Temp Else Ok');
+                                                    } else {
+                                                        console.log('err insert else');
+                                                    }
+                                                });
+                                            } else {
+                                                console.log('err delete else');
+                                            }
+                                        });
 
-                    });
-                } catch (err) {
-                    console.log('error try catch on ' + telcoName);
-                }
-            } 
-//            else {
-//                console.log(err);
-//            }
+                                    }
+                                });
+
+//                                for (var i = 0; i < two.length; i++) {
+//                                    if (two[i].data.trx_id === '') {
+//
+//                                        two[i].data.trx_id = two[i].body;
+//                                        
+//                                        db.query('INSERT INTO tb_sms_push SET ?', [two[i].data], function (err, resInsert) {
+//                                            if (!err) {
+//                                                db.query('DELETE FROM tb_sms_push_temp WHERE session_id = ?', [two[i].data.session_id], function (err, resDelete) {
+//                                                    if (!err) {
+//                                                        console.log('[' + dateNow + '] : Push Content Message & Delete Push Temp Ok');
+//                                                    } else {
+//                                                        console.log('err delete');
+//                                                    }
+//                                                });
+//                                            } else {
+//                                                console.log(err);
+//                                            }
+//                                        });
+//                                    }
+//                                }
+                            }
+                        });
+                    }
+                });
+            }
         });
     } catch (err) {
         console.log('error try catch mo-read dir');
